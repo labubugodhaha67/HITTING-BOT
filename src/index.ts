@@ -4,12 +4,9 @@ import {
   REST,
   Routes,
   SlashCommandBuilder,
-  EmbedBuilder,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  ChannelType,
-  PermissionFlagsBits,
   ChatInputCommandInteraction,
   ButtonInteraction,
 } from "discord.js";
@@ -47,7 +44,7 @@ const buttonCommand = new SlashCommandBuilder()
   );
 
 
-export async function startBot() {
+export async function startBot(): Promise<void> {
   if (!token || !clientId) {
     logger.warn("Missing token or client id");
     return;
@@ -102,7 +99,7 @@ export async function startBot() {
               .addComponents(
                 new ButtonBuilder()
                   .setCustomId(id)
-                  .setLabel(buttonText.slice(0,80))
+                  .setLabel(buttonText.slice(0, 80))
                   .setStyle(ButtonStyle.Primary),
               ),
           ],
