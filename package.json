@@ -1,15 +1,13 @@
 {
-  "name": "discord-bot",
+  "name": "ragebait-bot",
   "version": "1.0.0",
+  "description": "Funny auto-reply Discord bot",
+  "main": "index.js",
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node index.js"
   },
   "dependencies": {
-    "discord.js": "^14.21.0"
-  },
-  "devDependencies": {
-    "@types/node": "^24.0.0",
-    "typescript": "^5.9.0"
+    "discord.js": "^14.21.0",
+    "dotenv": "^16.4.7"
   }
 }
