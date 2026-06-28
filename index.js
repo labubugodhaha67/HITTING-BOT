@@ -15,16 +15,16 @@ client.once("ready", () => {
     console.log(`Logged in as ${client.user.tag}`);
 });
 
-client.on("messageCreate", (message) => {
-
-    // Ignore bots
+client.on("messageCreate", async (message) => {
     if (message.author.bot) return;
 
-    // Pick random reply
     const reply = responses[Math.floor(Math.random() * responses.length)];
 
-    // Reply to message
-    message.reply(reply);
+    try {
+        await message.reply(reply);
+    } catch (error) {
+        console.error("Failed to reply:", error);
+    }
 });
 
 client.login(process.env.TOKEN);
