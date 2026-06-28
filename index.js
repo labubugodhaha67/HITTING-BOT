@@ -19,30 +19,43 @@ const client = new Client({
     ]
 });
 
+
 let replyChannelId = null;
 
 
 const commands = [
     new SlashCommandBuilder()
         .setName("reply")
-        .setDescription("Choose the channel the bot replies in")
+        .setDescription("Set the channel where the bot replies")
         .addChannelOption(option =>
             option
                 .setName("channel")
-                .setDescription("Channel")
+                .setDescription("Choose the channel")
                 .setRequired(true)
         )
-].map(x => x.toJSON());
+].map(command => command.toJSON());
+
 
 
 client.once("ready", async () => {
 
     console.log(`Logged in as ${client.user.tag}`);
 
-    const rest = new REST({version:"10"})
+
+    const rest = new REST({ version: "10" })
         .setToken(process.env.TOKEN);
 
 
+    // Remove old global commands
+    await rest.put(
+        Routes.applicationCommands(client.user.id),
+        {
+            body: []
+        }
+    );
+
+
+    // Add server command
     await rest.put(
         Routes.applicationGuildCommands(
             client.user.id,
@@ -53,9 +66,11 @@ client.once("ready", async () => {
         }
     );
 
-    console.log("Command ready");
+
+    console.log("Slash command loaded");
 
 });
+
 
 
 client.on("interactionCreate", async interaction => {
@@ -66,6 +81,18 @@ client.on("interactionCreate", async interaction => {
     if (interaction.commandName === "reply") {
 
 
+        if (!interaction.member.permissions.has(
+            PermissionsBitField.Flags.ManageChannels
+        )) {
+
+            return interaction.reply({
+                content: "You need Manage Channels permission.",
+                ephemeral: true
+            });
+
+        }
+
+
         const channel =
             interaction.options.getChannel("channel");
 
@@ -73,45 +100,60 @@ client.on("interactionCreate", async interaction => {
         replyChannelId = channel.id;
 
 
+        console.log(
+            "Reply channel set:",
+            replyChannelId
+        );
+
+
         await interaction.reply({
-            content:`Bot will reply in ${channel}`,
-            ephemeral:true
+            content: `Bot replies are now enabled in ${channel}`,
+            ephemeral: true
         });
-
-
-        console.log("Reply channel:", replyChannelId);
 
     }
 
 });
+
 
 
 client.on("messageCreate", async message => {
 
 
-    console.log("Message seen:", message.content);
-
-
     if (message.author.bot) return;
 
 
-    if (!replyChannelId) {
-        console.log("No channel selected");
-        return;
-    }
+    if (!replyChannelId) return;
 
 
     if (message.channel.id !== replyChannelId) return;
 
 
+
     const msg =
-        responses[Math.floor(Math.random()*responses.length)];
+        responses[
+            Math.floor(Math.random() * responses.length)
+        ];
 
 
-    await message.reply(msg);
+
+    if (!msg) return;
+
+
+
+    try {
+
+        await message.reply(msg);
+
+    } catch (error) {
+
+        console.log("Reply error:", error);
+
+    }
 
 
 });
+
 
 
 client.login(process.env.TOKEN);
