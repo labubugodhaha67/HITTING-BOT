@@ -28,23 +28,30 @@ const commands = [
         .addChannelOption(option =>
             option
                 .setName("channel")
-                .setDescription("Channel for bot replies")
+                .setDescription("Choose the reply channel")
                 .setRequired(true)
         )
 ].map(command => command.toJSON());
 
 
-const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
-
 client.once("ready", async () => {
+
     console.log(`Logged in as ${client.user.tag}`);
 
+    const rest = new REST({ version: "10" })
+        .setToken(process.env.TOKEN);
+
     await rest.put(
-        Routes.applicationCommands(client.user.id),
-        { body: commands }
+        Routes.applicationGuildCommands(
+            client.user.id,
+            process.env.GUILD_ID
+        ),
+        {
+            body: commands
+        }
     );
 
-    console.log("Slash command loaded");
+    console.log("Slash command registered");
 });
 
 
@@ -52,19 +59,24 @@ client.on("interactionCreate", async interaction => {
 
     if (!interaction.isChatInputCommand()) return;
 
+
     if (interaction.commandName === "reply") {
 
-        if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) {
+        if (!interaction.member.permissions.has(
+            PermissionsBitField.Flags.ManageChannels
+        )) {
             return interaction.reply({
                 content: "You need Manage Channels permission.",
                 ephemeral: true
             });
         }
 
+
         replyChannel = interaction.options.getChannel("channel");
 
-        await interaction.reply({
-            content: `Bot replies are now locked to ${replyChannel}.`,
+
+        interaction.reply({
+            content: `Replies are now enabled in ${replyChannel}`,
             ephemeral: true
         });
     }
@@ -75,7 +87,6 @@ client.on("messageCreate", async message => {
 
     if (message.author.bot) return;
 
-    // Only reply in selected channel
     if (!replyChannel) return;
 
     if (message.channel.id !== replyChannel.id) return;
@@ -84,11 +95,9 @@ client.on("messageCreate", async message => {
     const reply =
         responses[Math.floor(Math.random() * responses.length)];
 
-    try {
-        await message.reply(reply);
-    } catch (error) {
-        console.error(error);
-    }
+
+    message.reply(reply);
+
 });
 
 
