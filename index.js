@@ -19,7 +19,7 @@ const client = new Client({
     ]
 });
 
-let replyChannel = null;
+let replyChannelId = null;
 
 const commands = [
     new SlashCommandBuilder()
@@ -28,7 +28,7 @@ const commands = [
         .addChannelOption(option =>
             option
                 .setName("channel")
-                .setDescription("Choose the reply channel")
+                .setDescription("Channel to reply in")
                 .setRequired(true)
         )
 ].map(command => command.toJSON());
@@ -36,22 +36,30 @@ const commands = [
 
 client.once("ready", async () => {
 
-    console.log(`Logged in as ${client.user.tag}`);
+    console.log(`Online as ${client.user.tag}`);
 
     const rest = new REST({ version: "10" })
         .setToken(process.env.TOKEN);
 
+
+    // Delete old global commands
+    await rest.put(
+        Routes.applicationCommands(client.user.id),
+        { body: [] }
+    );
+
+
+    // Add server command
     await rest.put(
         Routes.applicationGuildCommands(
             client.user.id,
             process.env.GUILD_ID
         ),
-        {
-            body: commands
-        }
+        { body: commands }
     );
 
-    console.log("Slash command registered");
+
+    console.log("Reply command loaded");
 });
 
 
@@ -61,6 +69,7 @@ client.on("interactionCreate", async interaction => {
 
 
     if (interaction.commandName === "reply") {
+
 
         if (!interaction.member.permissions.has(
             PermissionsBitField.Flags.ManageChannels
@@ -72,31 +81,47 @@ client.on("interactionCreate", async interaction => {
         }
 
 
-        replyChannel = interaction.options.getChannel("channel");
+        const channel =
+            interaction.options.getChannel("channel");
 
 
-        interaction.reply({
-            content: `Replies are now enabled in ${replyChannel}`,
+        replyChannelId = channel.id;
+
+
+        await interaction.reply({
+            content: `I will now reply in ${channel}`,
             ephemeral: true
         });
     }
+
 });
 
 
 client.on("messageCreate", async message => {
 
+
     if (message.author.bot) return;
 
-    if (!replyChannel) return;
 
-    if (message.channel.id !== replyChannel.id) return;
+    if (!replyChannelId) return;
+
+
+    if (message.channel.id !== replyChannelId) return;
 
 
     const reply =
         responses[Math.floor(Math.random() * responses.length)];
 
 
-    message.reply(reply);
+    try {
+
+        await message.reply(reply);
+
+    } catch (err) {
+
+        console.log("Reply error:", err);
+
+    }
 
 });
 
